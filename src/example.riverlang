@@ -1,0 +1,13 @@
+DEFINE Base 2
+
+base = Base;
+exponent = 10;
+
+result = 1;
+
+i = exponent;
+WHILE (i > 0) {
+    result *= base;
+    i = i - 1;
+} ;
+
