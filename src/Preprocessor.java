@@ -5,7 +5,7 @@ public class Preprocessor {
     static final Pattern definitionPattern = Pattern.compile("DEFINE\\s+(?<constant>[_a-zA-Z][_a-zA-Z0-9]*)\\s+(?<value>\\S+)");
     public static String process(String content) {
         String processed = content;
-
+        
         int lastIndex = 0;
         Matcher definitionFinder = definitionPattern.matcher(processed);
         while (definitionFinder.find()) {
@@ -15,7 +15,7 @@ public class Preprocessor {
             processed = processed.replace(definitionFinder.group(), "");
             processed = processed.replace(keyword, substitution);
         }
-
+        
         char[] buffer = new char[processed.length()];
         int parenthesisStack = 0;
         int bracketStack = 0;
@@ -70,7 +70,7 @@ public class Preprocessor {
         }
         sb.append(processed.substring(lastIndex));
         processed = sb.toString();
-
+        
         return processed;
     } 
 

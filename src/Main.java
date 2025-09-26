@@ -7,7 +7,7 @@ import java.util.List;
 public class Main {
     static final int maxFileSize = 0x100000;
     public static void main(String[] args) {
-        String filename = "example.riverlang";
+        String filename = "src/example.riverlang";
         String content = "";
         try {
             FileReader reader = new FileReader(filename);

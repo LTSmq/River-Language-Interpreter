@@ -8,6 +8,7 @@ public interface Expression extends SyntaxNode {
         Type xpVisitVariable(VariableExpression e);
         Type xpVisitOperation(OperationExpression e);
         Type xpVisitCall(CallExpression e);
+        Type xpVisitArray(ArrayExpression e);
     }
 
     public <Type> Type accept(Visitor<Type> v);
@@ -27,13 +28,22 @@ public interface Expression extends SyntaxNode {
         }
     }
 
-    class 
 
     class VariableExpression extends AtomicExpression {
         String variableName;
         public <Type> Type accept(Visitor<Type> v) { return v.xpVisitVariable(this); }
         VariableExpression(String name) {
             variableName = name;
+        }
+    }
+
+
+    class ArrayExpression implements Expression {
+        List<Expression> contents;
+        public List<SyntaxNode> children() { return new ArrayList<>(contents); }
+        
+        public <Type> Type accept(Visitor<Type> v) {
+            return v.xpVisitArray(this);
         }
     }
 

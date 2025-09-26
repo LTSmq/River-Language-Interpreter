@@ -52,6 +52,12 @@ public class Executor implements Statement.Visitor<Boolean>, Expression.Visitor<
         return result;
     }
 
+    @Override 
+    public Measure xpVisitArray(Expression.ArrayExpression e) {
+
+        return null;
+    }
+
     @Override
     public Measure xpVisitCall(Expression.CallExpression e) {
         
