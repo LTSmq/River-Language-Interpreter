@@ -16,6 +16,7 @@ public class Scanner {
         tokenPatterns.put(TokenType.MEASURE,                "\\b(\\d+(?:\\.\\d+)?)\\s*(p?[km]?m\\d*)?(p?[dhs]?\\d*)?\\b");
         tokenPatterns.put(TokenType.VARIABLE,               "\\b((?:[_a-z])[_a-z0-9]*)\\b");
         tokenPatterns.put(TokenType.KEYWORD,                "\\b((?:[_A-Z])[_A-Z0-9]*)\\b");
+        tokenPatterns.put(TokenType.SUBSCRIPTION,           "@");
 
         tokenPatterns.put(TokenType.ARGUMENT_DELIMITER,     ",");
         tokenPatterns.put(TokenType.STATEMENT_DELIMITER,    "[;]");

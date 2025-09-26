@@ -15,12 +15,12 @@ public interface Expression extends SyntaxNode {
 
 
 
-    abstract class AtomicExpression implements Expression {
+    public abstract class AtomicExpression implements Expression {
         public List<SyntaxNode> children() { return null; };
     }
 
 
-    class LiteralExpression extends AtomicExpression {
+    public class LiteralExpression extends AtomicExpression {
         Measure value;
         public <Type> Type accept(Visitor<Type> v) { return v.xpVisitLiteral(this); }
         LiteralExpression(Measure v) {
@@ -29,26 +29,39 @@ public interface Expression extends SyntaxNode {
     }
 
 
-    class VariableExpression extends AtomicExpression {
+    public class VariableExpression extends AtomicExpression {
         String variableName;
+        Expression index;
         public <Type> Type accept(Visitor<Type> v) { return v.xpVisitVariable(this); }
         VariableExpression(String name) {
             variableName = name;
+            index = defaultIndex;
         }
+
+        VariableExpression(String name, Expression index) {
+            variableName = name;
+            this.index = index;
+        }
+
+        private static Expression defaultIndex = new LiteralExpression(Measure.falseValue); 
     }
 
 
-    class ArrayExpression implements Expression {
+    public class ArrayExpression implements Expression {
         List<Expression> contents;
         public List<SyntaxNode> children() { return new ArrayList<>(contents); }
         
         public <Type> Type accept(Visitor<Type> v) {
             return v.xpVisitArray(this);
         }
+
+        ArrayExpression(List<Expression> contents) {
+            this.contents = contents;
+        }
     }
 
 
-    class OperationExpression implements Expression {
+    public class OperationExpression implements Expression {
         enum Operation {
             UNDEFINED,
             ADD, SUBTRACT, MULTIPLY, DIVIDE,

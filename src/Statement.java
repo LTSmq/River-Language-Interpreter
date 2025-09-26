@@ -1,6 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 
+
 public interface Statement extends SyntaxNode {
     static interface Visitor<Type> {
         Type stmtVisitAssignment(AssignmentStatement s);

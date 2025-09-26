@@ -1,5 +1,7 @@
 import java.util.List;
 
+import Log.Source;
+
 import java.util.ArrayList;
 
 
@@ -81,6 +83,23 @@ public class Parser{
             }
             Log.error(Log.Source.PARSER, "Unrecognised atomic token " + atomicToken.lexeme);
         }
+
+        if (leadingToken.type == TokenType.OPEN_BRACKET) {
+            List<Token> contentTokens = lookAheadGrouping(expressionTokens.subList(1, expressionTokens.size()), TokenType.OPEN_BRACKET, TokenType.CLOSE_BRACKET);
+            List<Token> buffer = new ArrayList<>();
+            List<Expression> content = new ArrayList<>();;
+            for (Token token : contentTokens) {
+                if (token.type == TokenType.ARGUMENT_DELIMITER) {
+                    content.add(xpEvaluate(buffer));
+                    buffer.clear();
+                }
+                else {
+                    buffer.add(token);
+                }
+            }
+            content.add(xpEvaluate(buffer));
+            return new Expression.ArrayExpression(content);
+        }
         
         if (leadingToken.type == TokenType.OPEN_PARENTHESIS) {
             int parenthesisStack = 0;
@@ -112,8 +131,29 @@ public class Parser{
             }
 
             Expression.OperationExpression.Operation operation = Expression.OperationExpression.parseOperation(nextToken.lexeme);
-            
             return new Expression.OperationExpression(subject, operation, xpEvaluate(expressionTokens.subList(2, expressionTokens.size())));
+        }
+        if (expressionTokens.size() > 2) {
+            Token lastToken = expressionTokens.get(2);
+
+            if (
+                    leadingToken.type == TokenType.VARIABLE
+                &&  nextToken.type == TokenType.SUBSCRIPTION
+            ) {
+
+                Expression index = null;
+                Expression.VariableExpression variableExpression = new Expression.VariableExpression(leadingToken.lexeme, index);
+                if (expressionTokens.size() == 3) {
+                    return variableExpression;
+                }
+                else if (expressionTokens.get(3).type == TokenType.OPERATOR) {
+                    return new Expression.OperationExpression(
+                        variableExpression,
+                        Expression.OperationExpression.parseOperation(expressionTokens.get(3).lexeme),
+                        xpEvaluate(expressionTokens.subList(4, expressionTokens.size()))
+                    );
+                }
+            }
         }
 
         String grammarExpression = "";
@@ -129,16 +169,31 @@ public class Parser{
         Token leadingToken = statementTokens.get(0);
         Token nextToken = statementTokens.get(1);
         if (leadingToken.type == TokenType.VARIABLE) {
-            if (nextToken.type == TokenType.ASSIGN) {
-                List<Token> targetTokens = new ArrayList<>();
-                targetTokens.addAll(statementTokens.subList(2, statementTokens.size()));
+            int assignIndex = -1;
+
+            if (nextToken.type == TokenType.SUBSCRIPTION) {
+                for (int i = 0; i < statementTokens.size(); i++) {
+                    if (statementTokens.get(i).type == TokenType.ASSIGN) {
+                        assignIndex = i;
+                        break;
+                    }
+                }
+                List<Token> indexExpressionTokens = statementTokens.subList(2, assignIndex);
+                List<Token> valueExpressionTokens = statementTokens.subList(assignIndex + 1, statementTokens.size());
+
                 return new AssignmentStatement(
-                    new Expression.VariableExpression(leadingToken.lexeme), 
-                    xpEvaluate(targetTokens)
+                    new Expression.VariableExpression(leadingToken.lexeme, xpEvaluate(indexExpressionTokens)), 
+                    xpEvaluate(valueExpressionTokens)
                 );
+            }
+            else if (nextToken.type == TokenType.ASSIGN) {
+                Expression value  =  xpEvaluate(statementTokens.subList(2, statementTokens.size()));
+                return new AssignmentStatement(
+                    new Expression.VariableExpression(leadingToken.lexeme), value);
             }
 
         }
+
         if (leadingToken.type == TokenType.KEYWORD) {
             if (IfStatement.keywords.contains(leadingToken.lexeme)){
 

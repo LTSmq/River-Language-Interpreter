@@ -1,5 +1,6 @@
 import java.util.List;
 
+
 public class Executor implements Statement.Visitor<Boolean>, Expression.Visitor<Measure>{
     public void execute(List<Statement> program) {
         for (Statement statement : program) {
@@ -54,8 +55,33 @@ public class Executor implements Statement.Visitor<Boolean>, Expression.Visitor<
 
     @Override 
     public Measure xpVisitArray(Expression.ArrayExpression e) {
+        if (e.contents == null) return null;
 
-        return null;
+        Measure[] measures = new Measure[e.contents.size()];
+        Measure head = e.contents.get(0).accept(this);
+        measures[0] = head;
+        Measure previous = head;
+
+        for (int i = 1; i < measures.length; i++) {
+            Measure newMeasure = new Measure(e.contents.get(i).accept(this));
+            System.out.println(newMeasure);
+            System.out.println(previous);
+            System.out.println(previous.next);
+            System.out.println("-");
+            previous.next = newMeasure;
+            System.out.println(newMeasure);
+            System.out.println(previous);
+            System.out.println(previous.next);
+            System.out.println("-");
+            previous = newMeasure;
+            System.out.println(newMeasure);
+            System.out.println(previous);
+            System.out.println(previous.next);
+            System.out.println("-");
+        }
+        System.out.println();
+
+        return head;
     }
 
     @Override
@@ -64,13 +90,21 @@ public class Executor implements Statement.Visitor<Boolean>, Expression.Visitor<
         return null;
     }
 
-
     @Override
     public Boolean stmtVisitAssignment(AssignmentStatement s) {
-        Variable.set(
-            s.subject.variableName,
-            s.target.accept(this)
-        );
+        int i = (int) Math.round(s.subject.index.accept(this).magnitude);
+        Measure cursor = s.target.accept(this);
+
+        while (cursor != null) {
+            Variable.set(
+                s.subject.variableName,
+                i,
+                new Measure(cursor)
+            );
+            i++;
+            System.out.println(cursor);
+            cursor = cursor.next;
+        }
 
         return true;
     }

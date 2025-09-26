@@ -6,6 +6,8 @@ public class Measure {
     int meter;
     int second;
 
+    Measure next;
+
     public static final Measure trueValue = new Measure(1.0);
     public static final Measure falseValue = new Measure(0.0);
     public static Measure booleanOf(boolean primitive) {

@@ -6,6 +6,8 @@ public class Preprocessor {
     public static String process(String content) {
         String processed = content;
         
+        //processed = processed.replaceAll("\\n*", "\n");
+        
         int lastIndex = 0;
         Matcher definitionFinder = definitionPattern.matcher(processed);
         while (definitionFinder.find()) {
@@ -45,6 +47,7 @@ public class Preprocessor {
 
         processed = new String(buffer);
         processed = processed.replaceAll("};*", "} ; ");
+        processed = processed.replaceAll("@\\s+(?:=\\d)", "@");
 
         char[] separation_values = new char[] {';', ',', '(', ')', '[', ']', '{', '}'};
         for (char value : separation_values) {

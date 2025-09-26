@@ -1,13 +1,7 @@
-DEFINE Base 2
+x = [2, 2 + 1, 4]
 
-base = Base;
-exponent = 10;
+x = 4
 
-result = 1;
-
-i = exponent;
-WHILE (i > 0) {
-    result *= base;
-    i = i - 1;
-} ;
-
+a = x@0
+b = x@1
+c = x@2
