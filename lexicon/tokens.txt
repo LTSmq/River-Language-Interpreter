@@ -1,0 +1,24 @@
+String              "(?<content>(?:(?<=\\)\"|[^\"])*)"
+Measure             \b(?<magnitude>\d+(?:\.\d+)?)(?:(?<meterInverter>p)?(?<meterModifier>[km])?(?<meter>m)(?<meterPower>\d+)?)?(?:(?<timeInverter>p)?(?<time>[dhs])(?<timePower>\d+)?)?\b
+Word                \b((?:[_a-z])[_a-z0-9]*)\b
+
+KeywordIf           IF
+KeywordWhile        WHILE
+
+Comparator          (?:[\>\<]=?)|(?:[=!]=)
+Arithmetic          [\+\-\*\/]
+
+Assign              =
+
+OpenExpression      \(
+CloseExpression     \)
+OpenBlock           \{
+CloseBlock          \}
+OpenSubscript       \[
+CloseSubscript      \]
+
+StatementDelimiter  (?:\s*;)+
+ArgumentDelimiter   ,
+OutputDelimiter     '
+
+Unrecognised        \S+

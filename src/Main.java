@@ -1,46 +1,35 @@
-import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 import java.util.List;
 
+import nodes.tokens.*;
+import processors.*;
+
 public class Main {
-    static final int maxFileSize = 0x100000;
     public static void main(String[] args) {
-        String filename = "src/example.riverlang";
-        String content = "";
-        try {
-            FileReader reader = new FileReader(filename);
-            char[] buffer = new char[maxFileSize];
-            try {
-                reader.read(buffer);
-                int lastIndex = buffer.length - 1;
-                System.out.println(buffer[lastIndex]);
-                while (buffer[lastIndex] == '\0') {
-                    lastIndex--;
-                }
-                content = new String(buffer, 0, lastIndex+1);
-                reader.close();
-            }
-            catch (IOException inOutException) {
-                System.out.println("Error reading file...");
-            }
-            
-        }
-        catch (FileNotFoundException notFound) {
-            System.out.println("File not found...");
-        }
+         String tokensPath = "lexicon/tokens.txt";
+         String grammarPath = "lexicon/testgrammar.txt";
+         String programPath = "examples/test1.txt";
 
-        content = Preprocessor.process(content);
-        Scanner scanner = new Scanner(true);
-        List<Token> tokens = scanner.getTokens(content);
-        List<Statement> statements = Parser.parse(tokens);
-        new Executor().execute(statements);
+         Scanner scanner = new Scanner(readFile(tokensPath));
+         String source = readFile(programPath);
 
-        for (String variableName : Variable.registry.keySet()) {
-            Measure measure = Variable.registry.get(variableName).get(0);
-            System.out.println("Variable:\t" + variableName + ",\t->\t" + measure.magnitude + "\t->\t" + measure.meter + "\t->\t" + measure.second + "\t-->\t" + measure);
-        }
+         List<Token> tokens = scanner.scan(source);
+         Parser parser = new Parser(readFile(grammarPath));
 
     }
+
+    public static String readFile(String filePath) {
+        try {
+            return new String(Files.readAllBytes(Paths.get(filePath)));
+        }
+
+        catch (IOException e) {
+            System.out.println("Bad read of file " + filePath + ":\t" + e);
+            return "";
+        }
+    }
+
 }
