@@ -1,1 +1,2 @@
-KINDPERSON -> (Hi | Bye);
+EXAMPLE_I   -> One . Two . (Three | Four);
+EXAMPLE_II  -> (EXAMPLE_I)* . (Uno | Dos | Tres);

@@ -40,10 +40,9 @@ public class MetaScanner {
                     if (!(operand instanceof BracketMetaToken bracket)) {
                         continue;
                     }
-                    System.out.println(bracket + " at position " + i);
                     int end = bracket.findTerminus(tokenSequence, i);
-                    while (i <= end) {
-                        operandList.add(tokenSequence.get(i));
+                    while (i < end) {
+                        operandList.add(tokenSequence.get(i+1));
                         i++;
                     }
                 }
@@ -56,7 +55,6 @@ public class MetaScanner {
         for (int i = 0; i < operandQueue.size(); i++) {
             LinkedList<MetaToken> operandTokens = operandQueue.get(i);
             if (operandTokens.size() <= 1) continue;
-
             operandTokens = parenthesize(operandTokens.subList(1, operandTokens.size() - 1));
             operandQueue.set(i, operandTokens);
         }
@@ -64,19 +62,50 @@ public class MetaScanner {
         // Build new sequence
         LinkedList<MetaToken> result = new LinkedList<>();
         while (!operandQueue.isEmpty() || !operatorQueue.isEmpty()) {
-            OperatorMetaToken operator = (operatorQueue.isEmpty()) ? null : operatorQueue.pop();
+            
             LinkedList<MetaToken> operandTokens = operandQueue.pop();
             result.addAll(operandTokens);
+            OperatorMetaToken operator = (operatorQueue.isEmpty()) ? null : operatorQueue.pop();
+            while (operator instanceof PostfixMetaToken) {
+                result.addLast(operator);
+                operator = (operatorQueue.isEmpty()) ? null : operatorQueue.pop();
+            }
+
             result.addLast(BracketMetaToken.CLOSE);
             if (operator != null) result.addLast(operator);
             result.addFirst(BracketMetaToken.OPEN);
+            
         }
-
         return result;
+    }
+
+    static List<MetaToken> shunt(List<MetaToken> tokenSequence) {  // I'm shunting it
+        // Needs work 
+
+        LinkedList<MetaToken> outputStack = new LinkedList<>();
+        LinkedList<MetaToken> operatorStack = new LinkedList<>();
+
+        for (MetaToken metaToken : tokenSequence) {
+            System.out.println(metaToken + "->");
+            switch (metaToken) {
+                case LiteralMetaToken operand -> outputStack.addLast(operand);
+                case InfixMetaToken infix -> operatorStack.addLast(infix);
+                case PostfixMetaToken postfix -> outputStack.addLast(postfix); 
+                case BracketMetaToken bracket -> { if (bracket.type == BracketMetaToken.Type.CLOSE) {
+                    if (!operatorStack.isEmpty()) outputStack.addLast(operatorStack.pop());
+                }}
+                default -> {}
+            }
+            System.out.println(outputStack);
+            System.out.println(operatorStack);
+        }   
+
+        return outputStack;
     }
 
     public static LinkedHashMap<String, List<MetaToken>> scan(String configSource) {
         LinkedHashMap<String, String> ruleGrammars = new LinkedHashMap<>();
+        
         Matcher assignmentExtractor = ASSIGNMENT_EXTRACTION_PATTERN.matcher(configSource);
         while (assignmentExtractor.find()) {
             ruleGrammars.put(
@@ -88,6 +117,7 @@ public class MetaScanner {
         LinkedHashMap<String, List<MetaToken>> result = new LinkedHashMap<>();
 
         for (String rule : ruleGrammars.keySet()) {
+
             String grammarString = ruleGrammars.get(rule);
             Matcher grammarExtractor = META_TOKEN_EXTRACTION_PATTERN.matcher(grammarString);
             while (grammarExtractor.find()) {
@@ -115,7 +145,12 @@ public class MetaScanner {
         }
 
         for (String rule : result.keySet()) {
-            result.put(rule, parenthesize(result.get(rule)));
+            List<MetaToken> tokenSequence = result.get(rule);
+
+            tokenSequence = parenthesize(tokenSequence);
+            tokenSequence = shunt(tokenSequence);
+
+            result.put(rule, tokenSequence);
         }
 
         for (String rule : result.keySet()) {
