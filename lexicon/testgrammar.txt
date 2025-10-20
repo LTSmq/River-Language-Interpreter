@@ -1,6 +1,6 @@
 PROGRAM                     -> content:(STATEMENT*);
 
-STATEMENT                   -> (ASSIGN_STATEMENT | PRINT_STATEMENT | PROGRAM) . StatementDelimiter;
+STATEMENT                   -> (ASSIGN_STATEMENT | PRINT_STATEMENT) . StatementDelimiter;
 ASSIGN_STATEMENT            -> destination:VARIABLE . operation:Operator? . Assign . source:EXPRESSION;
 PRINT_STATEMENT             -> string:String;
 OUTPUT_STATEMENT            -> OutputDelimiter . interior:EXPRESSION . OutputDelimiter;
@@ -15,3 +15,4 @@ OPERATION_EXPRESSION        -> OPERAND . Operator . EXPRESSION;
 OPERAND                     -> Variable | Literal;
 VARIABLE                    -> Word . (OpenSubscript . EXPRESSION . CloseSubscript)?;
 LITERAL                     -> Measure;
+

@@ -3,10 +3,13 @@ package processors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import javax.sound.sampled.Line;
+
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.HashMap;
 
 import data.metatokens.*;
@@ -148,9 +151,13 @@ public class MetaScanner {
         return outputQueue;
     }
 
-    public static LinkedHashMap<String, List<MetaToken>> getRules(String configSource) {
+    // Return rules with metatoken sequences as they occur in the source
+    public static LinkedHashSet<Rule> getRulesPlain(String configSource) {
+        // Initialise storage
+        LinkedHashSet<Rule> result = new LinkedHashSet<>();
         LinkedHashMap<String, String> ruleGrammars = new LinkedHashMap<>();
         
+        // Extract rule/expression pairs from source using extraction pattern
         Matcher assignmentExtractor = ASSIGNMENT_EXTRACTION_PATTERN.matcher(configSource);
         while (assignmentExtractor.find()) {
             ruleGrammars.put(
@@ -158,54 +165,70 @@ public class MetaScanner {
                 assignmentExtractor.group("value")
             );
         }
-
-        LinkedHashMap<String, List<MetaToken>> result = new LinkedHashMap<>();
-
-        for (String rule : ruleGrammars.keySet()) {
-
-            String grammarString = ruleGrammars.get(rule);
+        
+        // Iterate across rule names
+        for (String ruleString : ruleGrammars.keySet()) {
+            // Extract token matches from grammar string
+            String grammarString = ruleGrammars.get(ruleString);
             Matcher grammarExtractor = META_TOKEN_EXTRACTION_PATTERN.matcher(grammarString);
+
+            // Iterate across matches
             while (grammarExtractor.find()) {
+                // Iterate across known group name to metatoken class map 
                 for (String group : groupClasses.keySet()) {
+                    // Check for grouping match
                     String matchString = grammarExtractor.group(group);
-                    if (matchString != null) {
-                        Class<? extends MetaToken> metaTokenClass = groupClasses.get(group);
-                        try{
-                            MetaToken metaToken = metaTokenClass.getDeclaredConstructor(String.class, String.class).newInstance(matchString, group);
-                            if (metaToken instanceof OperandMetaToken operandMetaToken) {
-                                String tagName = operandMetaToken.tagName(group);
-                                String sourceHint = grammarExtractor.group(tagName);
-                                if (sourceHint != null) operandMetaToken.hints.add(sourceHint);
-                            }
-                            List<MetaToken> tokenList = result.getOrDefault(rule, null);
-                            if (tokenList == null) {
-                                tokenList = new ArrayList<>();
-                                result.put(rule, tokenList);
-                            }
-                            tokenList.add(metaToken);
-                        } catch (Exception e) { e.printStackTrace(); }
-                    }
+                    if (matchString == null) continue;
+
+                    // Fetch class from map
+                    Class<? extends MetaToken> metaTokenClass = groupClasses.get(group);
+
+                    // Enter try block to catch invalid instantiations
+                    try{
+                        // Create metatoken from (String lexeme, String group) constructor
+                        MetaToken metaToken = metaTokenClass.getDeclaredConstructor(String.class, String.class).newInstance(matchString, group);
+
+                        // Attach hint to operand
+                        if (metaToken instanceof OperandMetaToken operandMetaToken) {
+                            String tagName = operandMetaToken.tagName(group);
+                            String sourceHint = grammarExtractor.group(tagName);
+                            if (sourceHint != null) operandMetaToken.hints.add(sourceHint);
+                        }
+
+                        Rule rule = null;
+                        for (Rule existingRule : result) if (existingRule.name.equals(ruleString)) { rule = existingRule; break; }
+                        if (rule == null) {
+                            rule = new Rule(ruleString);
+                            result.add(rule);
+                        }
+
+                        rule.add(metaToken);
+                    } 
+                    
+                    // Print instantiation error without interruption
+                    catch (Exception e) { e.printStackTrace(); }
                 }
             }
         }
 
-        for (String rule : result.keySet()) {
-            List<MetaToken> tokenSequence = result.get(rule);
+        return result; 
+    }
 
-            tokenSequence = parenthesize(tokenSequence);
-            tokenSequence = shunt(tokenSequence);
+    public static Rule toPostFix(Rule infixRule) {
+        Rule rule = infixRule;
 
-            result.put(rule, tokenSequence);
-        }
+        rule = new Rule(rule.name, parenthesize(rule));
+        rule = new Rule(rule.name, shunt(rule));
+        
+        return rule;
+    }
 
-        for (String rule : result.keySet()) {
-            System.out.println(rule + ":");
-            System.out.print("\t");
-            for (MetaToken token : result.get(rule)) {
-                System.out.print(token.lexeme + " ");
-            }
-            System.out.println("\n");
-        }
+    // Return grammar syntax rules formatted as metatokens in a postfix sequence
+    public static LinkedHashSet<Rule> getRulesPostfix(String configSource) {
+        LinkedHashSet<Rule> result = getRulesPlain(configSource);   
+
+        result = result.stream().map(MetaScanner::toPostFix).collect(LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll);
+
         return result;
     }
 }
