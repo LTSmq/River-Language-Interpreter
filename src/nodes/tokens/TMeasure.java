@@ -58,4 +58,9 @@ public class TMeasure extends Token {
 
         measure = new Measure(magnitude, meter, second);
     }
+
+    @Override 
+    public boolean equals(Token other) {
+        return other instanceof TMeasure tmeasure && tmeasure.measure.equals(this.measure);
+    }
 }

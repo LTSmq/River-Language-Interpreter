@@ -41,6 +41,15 @@ abstract public class Operator extends Token {
         public static final String[] encodedGlyphs = {"+", "\0", "-", "*", "\0", "-", "^", "\0", "~"};
         public OperationType type;
 
+        @Override 
+        public boolean equals(Token other) {
+            return (
+                    other instanceof Arithmetic operator
+                &&  operator.direction == this.direction
+                &&  operator.type == this.type
+            );
+        }
+
         @Override
         public String[] tokenNames() {
             return new String[] {"Arithmetic"};
@@ -62,6 +71,7 @@ abstract public class Operator extends Token {
             type = OperationType.values()[code / 3];
             direction = OperationDirection.values()[code % 3];
         }
+
 
     }
 }

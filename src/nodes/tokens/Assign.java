@@ -10,4 +10,10 @@ public class Assign extends Token {
     public String[] tokenNames() {
         return new String[] {"Assign"};
     }
+
+    @Override
+    public boolean equals(Token other) {
+        return other instanceof Assign;
+    }
+
 }

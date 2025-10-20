@@ -1,6 +1,13 @@
 package nodes.expressions;
 
+import nodes.tokens.Word;
+
 public class Variable extends Operand {
-    public String name;
-    public int index;
+    public Word name() {
+        return (Word) children.get("name");
+    }
+
+    public Expression index() {
+        return (Expression) children.get("index");
+    }
 }

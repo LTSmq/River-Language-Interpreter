@@ -30,4 +30,7 @@ public class PostfixMetaToken extends OperatorMetaToken {
             add("zeroOne");
         }};
     }
+
+    @Override 
+    public int ary() { return 1; }
 }

@@ -4,12 +4,11 @@ import nodes.expressions.Expression;
 import nodes.expressions.Variable;
 
 public class Assignment extends Statement {
-    public Expression source;
-    public Variable destination;
-
-    public Assignment(Expression source, Variable destination) {
-        this.source = source;
-        this.destination = destination;
+    public Expression source() {
+        return child("source", Expression.class);
     }
 
+    public Variable destination() {
+        return child("destination", Variable.class);
+    }
 }

@@ -3,9 +3,6 @@ package processors;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import javax.sound.sampled.Line;
-
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.LinkedHashMap;
@@ -13,6 +10,7 @@ import java.util.LinkedHashSet;
 import java.util.HashMap;
 
 import data.metatokens.*;
+import java.lang.reflect.InvocationTargetException;
 
 
 public class MetaScanner {
@@ -152,6 +150,7 @@ public class MetaScanner {
     }
 
     // Return rules with metatoken sequences as they occur in the source
+    @SuppressWarnings("CallToPrintStackTrace")
     public static LinkedHashSet<Rule> getRulesPlain(String configSource) {
         // Initialise storage
         LinkedHashSet<Rule> result = new LinkedHashSet<>();
@@ -206,7 +205,7 @@ public class MetaScanner {
                     } 
                     
                     // Print instantiation error without interruption
-                    catch (Exception e) { e.printStackTrace(); }
+                    catch (IllegalAccessException | IllegalArgumentException | InstantiationException | NoSuchMethodException | InvocationTargetException e) { e.printStackTrace(); }
                 }
             }
         }
@@ -219,7 +218,7 @@ public class MetaScanner {
 
         rule = new Rule(rule.name, parenthesize(rule));
         rule = new Rule(rule.name, shunt(rule));
-        
+
         return rule;
     }
 

@@ -66,4 +66,9 @@ public class Bracket extends Token {
 
         return cursor;
     }
+
+    @Override
+    public boolean equals(Token other) {
+        return other instanceof Bracket bracket && bracket.type == this.type;
+    }
 }

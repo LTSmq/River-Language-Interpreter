@@ -16,6 +16,9 @@ abstract public class Token extends Node {
         return new String[] {};
     }
 
+    public boolean equals(Token other) {
+        return this.lexeme.equals(other.lexeme);  // Default
+    }
     @Override
     public String toString() {
         return this.getClass().getSimpleName() + "(\"" + lexeme + "\")";

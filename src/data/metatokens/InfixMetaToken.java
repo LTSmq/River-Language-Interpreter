@@ -28,4 +28,7 @@ public class InfixMetaToken extends OperatorMetaToken {
             add("concat");
         }};
     }
+
+    @Override
+    public int ary() { return 2; }
 }
