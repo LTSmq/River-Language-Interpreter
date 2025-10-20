@@ -9,6 +9,8 @@ import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.HashMap;
 
+import data.metatokens.*;
+
 
 public class MetaScanner {
     static final Pattern ASSIGNMENT_EXTRACTION_PATTERN = Pattern.compile("(?<rule>[A-Z][A-Z_]+)\\s*\\-\\>\\s*(?<value>[^;]+)");
@@ -26,26 +28,41 @@ public class MetaScanner {
     }};
 
     static LinkedList<MetaToken> parenthesize(List<MetaToken> tokenSequence) {
-        // Find all operand tokens
+        return parenthesize(tokenSequence, (String) null);
+    }
+
+    static LinkedList<MetaToken> parenthesize(List<MetaToken> tokenSequence, String tag) {
+        // Initialize storage
         LinkedList<LinkedList<MetaToken>> operandQueue = new LinkedList<>();
         LinkedList<OperatorMetaToken> operatorQueue = new LinkedList<>();
+
+        // File tokens into queues, including subsequences as operands when bracketed
         for (int i = 0; i < tokenSequence.size(); i++) {
             MetaToken metaToken = tokenSequence.get(i);
             switch (metaToken) {
                 case OperandMetaToken operand -> {
+                    // Create new token list for operand
                     LinkedList<MetaToken> operandList = new LinkedList<>();
                     operandQueue.add(operandList);
+
+                    // Add current token to list
                     operandList.add(operand);
                     
-                    if (!(operand instanceof BracketMetaToken bracket)) {
-                        continue;
-                    }
+                    // Continue iteration if current token is not a bracket
+                    if (!(operand instanceof BracketMetaToken bracket)) continue;
+
+                    // Find matching end bracket position
                     int end = bracket.findTerminus(tokenSequence, i);
+
+                    // Dump everything between the current token and end bracket to list
                     while (i < end) {
-                        operandList.add(tokenSequence.get(i+1));
+                        MetaToken groupToken = tokenSequence.get(i+1);
+                        if (groupToken instanceof OperandMetaToken groupOperand) groupOperand.hints.addAll(bracket.hints);
+                        operandList.add(groupToken);
                         i++;
                     }
                 }
+                
                 case OperatorMetaToken operator -> operatorQueue.add(operator);
                 default -> {}
             }
@@ -55,7 +72,9 @@ public class MetaScanner {
         for (int i = 0; i < operandQueue.size(); i++) {
             LinkedList<MetaToken> operandTokens = operandQueue.get(i);
             if (operandTokens.size() <= 1) continue;
-            operandTokens = parenthesize(operandTokens.subList(1, operandTokens.size() - 1));
+
+            List<MetaToken> stripped = operandTokens.subList(1, operandTokens.size() - 1);
+            operandTokens = parenthesize(stripped);
             operandQueue.set(i, operandTokens);
         }
 
@@ -65,6 +84,7 @@ public class MetaScanner {
             
             LinkedList<MetaToken> operandTokens = operandQueue.pop();
             result.addAll(operandTokens);
+
             OperatorMetaToken operator = (operatorQueue.isEmpty()) ? null : operatorQueue.pop();
             while (operator instanceof PostfixMetaToken) {
                 result.addLast(operator);
@@ -76,34 +96,59 @@ public class MetaScanner {
             result.addFirst(BracketMetaToken.OPEN);
             
         }
+
         return result;
     }
 
-    static List<MetaToken> shunt(List<MetaToken> tokenSequence) {  // I'm shunting it
-        // Needs work 
-
-        LinkedList<MetaToken> outputStack = new LinkedList<>();
-        LinkedList<MetaToken> operatorStack = new LinkedList<>();
-
-        for (MetaToken metaToken : tokenSequence) {
-            System.out.println(metaToken + "->");
-            switch (metaToken) {
-                case LiteralMetaToken operand -> outputStack.addLast(operand);
-                case InfixMetaToken infix -> operatorStack.addLast(infix);
-                case PostfixMetaToken postfix -> outputStack.addLast(postfix); 
-                case BracketMetaToken bracket -> { if (bracket.type == BracketMetaToken.Type.CLOSE) {
-                    if (!operatorStack.isEmpty()) outputStack.addLast(operatorStack.pop());
-                }}
-                default -> {}
-            }
-            System.out.println(outputStack);
-            System.out.println(operatorStack);
-        }   
-
-        return outputStack;
+    static List<MetaToken> shunt(List<MetaToken> parentesizedTokenSequence) {
+        return shunt(new LinkedList<>(parentesizedTokenSequence));
     }
 
-    public static LinkedHashMap<String, List<MetaToken>> scan(String configSource) {
+    static LinkedList<MetaToken> shunt(LinkedList<MetaToken> tokenSequence) {
+        // Initialize storage
+        LinkedList<MetaToken> outputQueue = new LinkedList<>();
+        LinkedList<MetaToken> operatorStack = new LinkedList<>();
+        
+        // Begin iteration through sequence
+        for (MetaToken token : tokenSequence) {
+            switch (token) {
+                case BracketMetaToken bracket -> {
+                    // Push opening bracket to operator stack for later resolution
+                    if (bracket.type == BracketMetaToken.Type.OPEN) operatorStack.push(bracket);
+                    
+                    // Dump everything in operator stack to queue until matching opening bracket is found
+                    else if (bracket.type == BracketMetaToken.Type.CLOSE) {
+                        while (!operatorStack.isEmpty() && !(
+                                operatorStack.peek() instanceof BracketMetaToken open 
+                            &&  open.type == BracketMetaToken.Type.OPEN
+                        ))  {
+                            outputQueue.add(operatorStack.pop());
+                        }
+                        
+                        // Consume opening bracket
+                        assert !operatorStack.isEmpty();
+                        operatorStack.pop();
+                    }
+                }
+    
+                case OperatorMetaToken operator -> operatorStack.push(operator);
+                case OperandMetaToken operand -> outputQueue.add(operand);  // Won't be a bracket as its already been checked
+    
+                default -> throw new RuntimeException("Unknown meta token type: " + token);
+            }
+        }
+    
+        // Drain remaining operators to output
+        while (!operatorStack.isEmpty()) {
+            MetaToken token = operatorStack.pop();
+            assert !(token instanceof BracketMetaToken);
+            outputQueue.add(token);
+        }
+    
+        return outputQueue;
+    }
+
+    public static LinkedHashMap<String, List<MetaToken>> getRules(String configSource) {
         LinkedHashMap<String, String> ruleGrammars = new LinkedHashMap<>();
         
         Matcher assignmentExtractor = ASSIGNMENT_EXTRACTION_PATTERN.matcher(configSource);
@@ -129,8 +174,8 @@ public class MetaScanner {
                             MetaToken metaToken = metaTokenClass.getDeclaredConstructor(String.class, String.class).newInstance(matchString, group);
                             if (metaToken instanceof OperandMetaToken operandMetaToken) {
                                 String tagName = operandMetaToken.tagName(group);
-                                String tag = grammarExtractor.group(tagName);
-                                operandMetaToken.tag = tag;
+                                String sourceHint = grammarExtractor.group(tagName);
+                                if (sourceHint != null) operandMetaToken.hints.add(sourceHint);
                             }
                             List<MetaToken> tokenList = result.getOrDefault(rule, null);
                             if (tokenList == null) {
@@ -155,195 +200,12 @@ public class MetaScanner {
 
         for (String rule : result.keySet()) {
             System.out.println(rule + ":");
+            System.out.print("\t");
             for (MetaToken token : result.get(rule)) {
                 System.out.print(token.lexeme + " ");
             }
-            System.out.println();
+            System.out.println("\n");
         }
         return result;
-    }
-}
-
-abstract class MetaToken {
-    public final String lexeme;
-    public MetaToken(String lexeme, String group) { this.lexeme = lexeme; }
-    public List<String> groups() { return null; }
-
-    @Override 
-    public String toString() {
-        return this.getClass().getName().replace("processors.", "") + "( " + lexeme + " )";
-    }
-}
-
-abstract class OperandMetaToken extends MetaToken {
-    public OperandMetaToken(String lexeme, String group) { super(lexeme, group); }
-    public String tag = "";
-
-    public String tagName(String _givenGroup) {
-        return null;
-    }
-
-    @Override
-    public String toString() {
-        if (tag == null || tag.equals("")) {
-            return super.toString();
-        }
-        else {
-            return super.toString() + "::" + tag;
-        }
-    }
-}
-
-class LiteralMetaToken extends OperandMetaToken {
-    public LiteralMetaToken(String lexeme, String group) {
-        super(lexeme, group);
-        switch (group) {
-            case "token" -> type = Type.TOKEN;
-            case "rule" -> type = Type.RULE;
-            default -> {}
-        }
-        name = lexeme;
-    }
-
-    enum Type {
-        TOKEN,
-        RULE,
-    }
-
-    public Type type;
-    public String name;
-
-    @Override
-    public List<String> groups() {
-        return new ArrayList<>(){{
-            add("token");
-            add("rule");
-        }};
-    }
-
-    @Override 
-    public String tagName(String givenGroup) {
-        return givenGroup + "Tag";
-    }
-}
-
-
-class BracketMetaToken extends OperandMetaToken {
-    public BracketMetaToken(String lexeme, String group) {
-        super(lexeme, group);
-        switch (group) {
-            case "openGroup" -> type = Type.OPEN;
-            case "closeGroup" -> type = Type.CLOSE;
-            default -> {}
-        }
-    }
-
-    public static final BracketMetaToken OPEN = new BracketMetaToken(" (", "openGroup");
-    public static final BracketMetaToken CLOSE = new BracketMetaToken(") ", "closeGroup");
-
-    enum Type {
-        OPEN,
-        CLOSE,
-    }
-
-    public Type type;
-
-    @Override
-    public List<String> groups() {
-        return new ArrayList<>(){{
-            add("openGroup");
-            add("closeGroup");
-        }};
-    }
-
-    @Override 
-    public String tagName(String givenGroup) {
-        return "groupTag";
-    }
-
-    public int findTerminus(List<MetaToken> metaTokens, int head) {
-        // In: A sequence of tokens and an integer `head` stating where in the sequence this is
-        // Out: The index of the matching closing token or -1 if it cannot be resolved
-        int stack = 0;
-        while (head < metaTokens.size()) {
-            MetaToken cursor = metaTokens.get(head);
-
-            switch (cursor) {
-                case BracketMetaToken bracket -> {
-                    switch (bracket.type) {
-                        case BracketMetaToken.Type.OPEN -> {
-                            stack++;
-                        }
-                        case BracketMetaToken.Type.CLOSE -> {
-                            stack --;
-                            if (stack <= 0) return head;
-                        }
-                    }
-                }
-                default -> { }
-            }
-            head++;
-        }
-
-        return -1;
-    }
-    
-}
-
-
-abstract class OperatorMetaToken extends MetaToken {
-    public OperatorMetaToken(String lexeme, String group) { super(lexeme, group); }
-}
-
-
-class InfixMetaToken extends OperatorMetaToken {
-    public InfixMetaToken(String lexeme, String group) {
-        super(lexeme, group);
-        switch (group) {
-            case "concat" -> type = Type.CONCAT;
-            case "or" -> type = Type.OR;
-            default -> {}
-        }
-    }
-    enum Type {
-        OR,
-        CONCAT,
-    }
-    public Type type;
-
-    @Override
-    public List<String> groups() {
-        return new ArrayList<>(){{
-            add("or");
-            add("concat");
-        }};
-    }
-}
-
-
-class PostfixMetaToken extends OperatorMetaToken {
-    public PostfixMetaToken(String lexeme, String group) {
-        super(lexeme, group);
-        switch(group) {
-            case "zeroPlus" -> type = Type.ZERO_PLUS;
-            case "onePlus" -> type = Type.ONE_PLUS;
-            case "zeroOne" -> type = Type.ZERO_ONE;
-        }
-    }
-    enum Type {
-        ZERO_PLUS,
-        ONE_PLUS,
-        ZERO_ONE,
-    }
-
-    public Type type;
-
-    @Override
-    public List<String> groups() {
-        return new ArrayList<>(){{
-            add("zeroPlus");
-            add("onePlus");
-            add("zeroOne");
-        }};
     }
 }
