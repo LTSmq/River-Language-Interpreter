@@ -1,5 +1,6 @@
 package processors;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Set;
 import java.util.LinkedHashMap;
@@ -13,13 +14,36 @@ import nodes.statements.*;
 import nodes.tokens.*;
 
 import data.metatokens.*;
+import javax.management.RuntimeErrorException;
 
 
 public class Parser {
 
     final Set<Rule> rules;
 
-    static GrammarNode generateGrammarTree(List<MetaToken> postfixMetaTokenSequence) {
+    public Parser(String configSource) {
+        rules = MetaScanner.getRulesPostfix(configSource);
+    }
+
+    public Statement[] parse(Token[] tokens) {
+        ArrayList<Statement> result = new ArrayList<>();
+        LinkedList<Token> tokenQueue = new LinkedList<>(Arrays.asList(tokens));
+
+        while (!tokenQueue.isEmpty()) {
+            Token cursor = tokenQueue.removeLast();
+            for (Rule rule : rules) {
+
+            }
+        }
+        
+        return result.toArray(Statement[]::new);
+    } 
+
+}
+
+
+class GrammarNode {
+    public static GrammarNode generateGrammarTree(List<MetaToken> postfixMetaTokenSequence) {
         // Initialise storage
         LinkedList<GrammarNode> grammarNodeStack = new LinkedList<>();
 
@@ -45,21 +69,7 @@ public class Parser {
         return grammarNodeStack.get(0);
     }
 
-    public Parser(String configSource) {
-        rules = MetaScanner.getRulesPostfix(configSource);
-    }
-
-    public Statement[] parse(Token[] tokens) {
-        ArrayList<Statement> result = new ArrayList<>();
-
-        return result.toArray(Statement[]::new);
-    } 
-
-}
-
-
-class GrammarNode {
-    private final MetaToken metaToken;
+    public final MetaToken metaToken;
     private final ArrayList<GrammarNode> children = new ArrayList<>();
 
     public GrammarNode(MetaToken metaToken, List<GrammarNode> initialChildren) {
@@ -75,4 +85,78 @@ class GrammarNode {
         if (node != null) children.add(node);
     }
 
-}  
+    public List<GrammarNode> getChildren() {
+        return children;
+    }
+
+} 
+
+
+enum AcceptCode {
+    ACCEPTED,       // The token is valid in the sequence, but the rule has not been satisfied
+    FULFILLED,      // The token has completed the rule, but more tokens are acceptable
+    TERMINATED,     // The token has completed the rule and the rule expects no more tokens
+    REJECTED,       // The token is incompatible with the rule
+}
+
+
+class RuleInterpreter {
+    final Rule rule;
+    LinkedList<OperandMetaToken> operandStack = new LinkedList<>();
+    Set<String> expectedContinue = new LinkedHashSet<>();  // The token name to continue the matching (i.e. maintain current operation in rule)
+    Set<String> expectedEscape = new LinkedHashSet<>();  // The token name to progress the pattern (i.e. get next operation in rule)
+    private int ruleHead;
+
+    public RuleInterpreter(Rule rule) {
+        this.rule = rule;
+    }
+
+    private void escape() {
+        MetaToken nextMetaToken = rule.get(ruleHead);
+        while (nextMetaToken instanceof OperandMetaToken operand) {
+            operandStack.addLast(operand);
+            ruleHead++;
+            nextMetaToken = rule.get(ruleHead);
+        }
+
+        assert nextMetaToken instanceof OperatorMetaToken;
+        OperatorMetaToken operator = (OperatorMetaToken) nextMetaToken;
+
+        switch (operator) {
+            case PostfixMetaToken postfix -> {
+                List<String> continueNames = new ArrayList<>() {{ add(operandStack.pop().lexeme); }};
+                List<String> escapeNames = new ArrayList<>();
+                
+                if (!operandStack.isEmpty()) escapeNames.add(operandStack.peek().lexeme);
+                switch (postfix.type) {
+                    case ONE_PLUS -> {
+                        
+                    }
+                    
+                    case ZERO_ONE -> {
+                    
+                    }
+                    
+                    case ZERO_PLUS -> {
+                    
+                    }
+                    
+                    default -> {}
+                    
+                }
+            }
+            case InfixMetaToken infix -> {
+
+            }
+            default -> {}
+        }
+    }
+
+    public boolean determine(List<Token> tokenSequence) {
+
+        for (Token token : tokenSequence) {
+
+        }
+        return false;
+    }
+}

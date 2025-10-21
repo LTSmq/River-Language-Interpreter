@@ -1,5 +1,6 @@
 package data.metatokens;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -22,6 +23,8 @@ public class LiteralMetaToken extends OperandMetaToken {
 
     public Type type;
     public String name;
+
+    public Rule rule = null;
 
     @Override
     public List<String> groups() {
