@@ -1,6 +1,11 @@
-package data.metatokens;
+package grammar.metatokens;
+
+import grammar.GrammarNode;
+import grammar.Rule;
+import nodes.tokens.Token;
 
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
 
 
@@ -31,4 +36,5 @@ public class InfixMetaToken extends OperatorMetaToken {
 
     @Override
     public int ary() { return 2; }
+
 }

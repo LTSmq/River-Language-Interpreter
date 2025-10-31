@@ -1,4 +1,4 @@
-package data.metatokens;
+package grammar.metatokens;
 
 import java.util.List;
 
@@ -9,6 +9,7 @@ public abstract class MetaToken {
 
     @Override 
     public String toString() {
-        return this.getClass().getName().replace("processors.", "") + "( " + lexeme + " )";
+        return this.getClass().getSimpleName() + "( " + lexeme + " )";
     }
+    
 }

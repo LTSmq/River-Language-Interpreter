@@ -1,4 +1,4 @@
-package data.metatokens;
+package grammar.metatokens;
 
 import java.util.ArrayList;
 import java.util.List;

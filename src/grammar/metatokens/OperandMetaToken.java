@@ -1,8 +1,8 @@
-package data.metatokens;
+package grammar.metatokens;
 
 import java.util.LinkedHashSet;
 
-public abstract class OperandMetaToken extends MetaToken {
+public abstract class OperandMetaToken extends MetaToken{
     public OperandMetaToken(String lexeme, String group) { super(lexeme, group); }
     public LinkedHashSet<String> hints = new LinkedHashSet<>();
 
@@ -16,4 +16,6 @@ public abstract class OperandMetaToken extends MetaToken {
         String hintString = String.join(":", hints);
         return super.toString() + "::" + hintString;
     }
+
+
 }

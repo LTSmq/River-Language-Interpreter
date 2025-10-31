@@ -28,4 +28,8 @@ public class Delimiter extends Token{
         }
     }
 
+    @Override
+    public boolean equals(Token other) {
+        return other instanceof Delimiter delimiter && delimiter.type == this.type;
+    }
 }

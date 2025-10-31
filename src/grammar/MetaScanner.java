@@ -1,15 +1,15 @@
-package processors;
+package grammar;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import grammar.metatokens.*;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.HashMap;
-
-import data.metatokens.*;
 import java.lang.reflect.InvocationTargetException;
 
 
@@ -119,10 +119,13 @@ public class MetaScanner {
                     
                     // Dump everything in operator stack to queue until matching opening bracket is found
                     else if (bracket.type == BracketMetaToken.Type.CLOSE) {
-                        while (!operatorStack.isEmpty() && !(
-                                operatorStack.peek() instanceof BracketMetaToken open 
-                            &&  open.type == BracketMetaToken.Type.OPEN
-                        ))  {
+                        while (
+                                !operatorStack.isEmpty() 
+                            && !(
+                                    operatorStack.peek() instanceof BracketMetaToken open 
+                                &&  open.type == BracketMetaToken.Type.OPEN
+                        ))  
+                        {
                             outputQueue.add(operatorStack.pop());
                         }
                         
@@ -139,7 +142,7 @@ public class MetaScanner {
             }
         }
     
-        // Drain remaining operators to output
+        // Dump remaining operators to output
         while (!operatorStack.isEmpty()) {
             MetaToken token = operatorStack.pop();
             assert !(token instanceof BracketMetaToken);
@@ -147,6 +150,38 @@ public class MetaScanner {
         }
     
         return outputQueue;
+    }
+
+    static LinkedList<MetaToken> collapseOperators(List<MetaToken> binaryPostfix) {
+        LinkedList<MetaToken> result = new LinkedList<>(binaryPostfix);
+        String lastOperator = "";
+        for (int index = binaryPostfix.size() - 1; index >= 0; index --) {
+            MetaToken cursor = result.get(index);
+
+            if (!(cursor instanceof InfixMetaToken infix)) {
+                continue;
+            }
+
+            String operatorString = infix.lexeme;
+            if (operatorString.equals(lastOperator)) {
+                result.remove(index);
+                continue;
+            }
+            lastOperator = operatorString;
+        }
+        return result;
+    }
+
+    // Link LiteralMetaToken instances in set of rules to their required rule (statement, expression)
+    static void assignRules(LinkedHashSet<Rule> rules) {
+        HashMap<String, Rule> ruleNameLookup = new HashMap<>();
+        for (Rule rule : rules) ruleNameLookup.put(rule.name, rule);
+
+        for (Rule rule : rules) {
+            for (MetaToken ruleToken : rule) if (ruleToken instanceof LiteralMetaToken literal) {  // The type is not strictly enforced, instead by typing convention
+                literal.rule = ruleNameLookup.getOrDefault(literal.lexeme, (Rule) null);  // This should therefore be null for token types as they are in PascalCase instead of SCREAMING_SNAME_CASE
+            }
+        }
     }
 
     // Return rules with metatoken sequences as they occur in the source
@@ -209,6 +244,8 @@ public class MetaScanner {
                 }
             }
         }
+        
+        assignRules(result);
 
         return result; 
     }
@@ -224,9 +261,12 @@ public class MetaScanner {
 
     // Return grammar syntax rules formatted as metatokens in a postfix sequence
     public static LinkedHashSet<Rule> getRulesPostfix(String configSource) {
-        LinkedHashSet<Rule> result = getRulesPlain(configSource);   
+        LinkedHashSet<Rule> plain = getRulesPlain(configSource);   
+        LinkedHashSet<Rule> result = new LinkedHashSet<>();
 
-        result = result.stream().map(MetaScanner::toPostFix).collect(LinkedHashSet::new, LinkedHashSet::add, LinkedHashSet::addAll);
+        for (Rule rule : plain) {
+            result.add(toPostFix(rule));
+        }
 
         return result;
     }

@@ -1,6 +1,12 @@
-package data.metatokens;
+package grammar.metatokens;
 
 import java.util.List;
+import java.util.Map;
+
+import grammar.GrammarNode;
+import grammar.Rule;
+import nodes.tokens.Token;
+
 import java.util.ArrayList;
 
 
@@ -21,7 +27,7 @@ public class PostfixMetaToken extends OperatorMetaToken {
     }
 
     public Type type;
-
+    
     @Override
     public List<String> groups() {
         return new ArrayList<>(){{

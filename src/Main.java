@@ -2,9 +2,11 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import java.util.Arrays;
 import java.util.List;
 
 import nodes.tokens.*;
+import nodes.Node;
 import processors.*;
 
 public class Main {
@@ -15,10 +17,12 @@ public class Main {
 
          Scanner scanner = new Scanner(readFile(tokensPath));
          String source = readFile(programPath);
+         String grammarSource = readFile(grammarPath);
 
          List<Token> tokens = scanner.scan(source);
-         Parser parser = new Parser(readFile(grammarPath));
-
+         Parser parser = new Parser(grammarSource);
+         System.out.println(parser.grammarTree());
+         System.out.println(parser.parse(tokens.toArray(Token[]::new)).asTree());
     }
 
     public static String readFile(String filePath) {

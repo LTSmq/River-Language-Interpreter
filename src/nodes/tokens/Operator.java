@@ -18,6 +18,15 @@ abstract public class Operator extends Token {
         public String[] tokenNames() {
             return new String[] {"Comparator"};
         }
+
+        @Override
+        public boolean equals(Token other) {
+            return (
+                    other instanceof Comparator comparator
+                &&  comparator.direction == this.direction
+                &&  comparator.equalInclusive == this.equalInclusive
+            );
+        }
         
         public Comparator(Matcher match) { 
             super(match); 

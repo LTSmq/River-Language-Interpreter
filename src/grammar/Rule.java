@@ -1,9 +1,11 @@
-package data.metatokens;
+package grammar;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Collection;
 
-public class Rule extends ArrayList<MetaToken>{
+import grammar.metatokens.*;
+
+public class Rule extends LinkedList<MetaToken>{
     public final String name;
     
     public Rule(String name, Collection<? extends MetaToken> initial) {
@@ -12,11 +14,11 @@ public class Rule extends ArrayList<MetaToken>{
     }
 
     public Rule(String name) {
-        this(name, new ArrayList<>());
+        this(name, new LinkedList<>());
     }
 
-    public ArrayList<OperandMetaToken> findHintedTokens(String matchHint) {
-        ArrayList<OperandMetaToken> result = new ArrayList<>();
+    public LinkedList<OperandMetaToken> findHintedTokens(String matchHint) {
+        LinkedList<OperandMetaToken> result = new LinkedList<>();
 
         for (MetaToken metaToken : this) {
             if (!(metaToken instanceof OperandMetaToken operand)) continue;

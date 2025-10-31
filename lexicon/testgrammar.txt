@@ -1,18 +1,17 @@
-PROGRAM                     -> content:(STATEMENT*);
+PROCEDURE                   -> content:(STATEMENT*);
 
-STATEMENT                   -> (ASSIGN_STATEMENT | PRINT_STATEMENT) . StatementDelimiter;
-ASSIGN_STATEMENT            -> destination:VARIABLE . operation:Operator? . Assign . source:EXPRESSION;
-PRINT_STATEMENT             -> string:String;
+STATEMENT                   -> (ASSIGN_STATEMENT | PRINT_STATEMENT | OUTPUT_STATEMENT | IF_STATEMENT | WHILE_STATEMENT) . StatementDelimiter;
+ASSIGN_STATEMENT            -> destination:VARIABLE . Assign . source:EXPRESSION;
+PRINT_STATEMENT             -> String;
 OUTPUT_STATEMENT            -> OutputDelimiter . interior:EXPRESSION . OutputDelimiter;
 IF_STATEMENT                -> KeywordIf . conditionalBlock:CONDITIONAL_BLOCK;
 WHILE_STATEMENT             -> KeywordWhile . conditionalBlock:CONDITIONAL_BLOCK;
 CONDITIONAL_BLOCK           -> condition:EXPRESSION . block:BLOCK;
-BLOCK                       -> OpenBlock . program:PROGRAM . CloseBlock;
+BLOCK                       -> OpenBlock . procedure:PROCEDURE . CloseBlock;
 
-EXPRESSION                  -> OPERATION_EXPRESSION | GROUP_EXPRESSION | Variable;
+EXPRESSION                  -> OPERATION_EXPRESSION | GROUP_EXPRESSION;
 GROUP_EXPRESSION            -> OpenGroup . EXPRESSION . CloseGroup;
-OPERATION_EXPRESSION        -> OPERAND . Operator . EXPRESSION;
-OPERAND                     -> Variable | Literal;
+OPERATION_EXPRESSION        -> OPERAND . (Operator . EXPRESSION)?;
+OPERAND                     -> Variable | LITERAL;
 VARIABLE                    -> Word . (OpenSubscript . EXPRESSION . CloseSubscript)?;
 LITERAL                     -> Measure;
-
