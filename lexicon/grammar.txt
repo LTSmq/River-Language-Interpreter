@@ -11,7 +11,6 @@ BLOCK                       -> OpenBlock . procedure:PROCEDURE . CloseBlock;
 
 EXPRESSION                  -> OPERATION_EXPRESSION | GROUP_EXPRESSION;
 GROUP_EXPRESSION            -> OpenGroup . EXPRESSION . CloseGroup;
-OPERATION_EXPRESSION        -> OPERAND . (Operator . EXPRESSION)?;
-OPERAND                     -> Variable | LITERAL;
+OPERATION_EXPRESSION        -> (VARIABLE | LITERAL) . (Operator . EXPRESSION)?;
 VARIABLE                    -> Word;
 LITERAL                     -> Measure;

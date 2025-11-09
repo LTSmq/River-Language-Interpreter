@@ -21,8 +21,18 @@ public class Main {
 
          List<Token> tokens = scanner.scan(source);
          Parser parser = new Parser(grammarSource);
-         System.out.println(parser.grammarTree());
-         System.out.println(parser.parse(tokens.toArray(Token[]::new)).asTree());
+         Node programRoot = parser.parse(tokens.toArray(Token[]::new));
+
+         Evaluator evaluator = new Evaluator();
+         String output = "";
+         
+         System.out.println(programRoot.asTree());
+         for (Node statement : programRoot.getChildren()) {
+            output += evaluator.execute(statement);
+            
+         }
+
+         System.out.println(output);
     }
 
     public static String readFile(String filePath) {

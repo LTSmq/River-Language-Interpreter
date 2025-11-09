@@ -52,7 +52,11 @@ public class GrammarNode{
     }
 
     public Node parse(Token[] tokens, int head,  Map<String, GrammarNode> context) {
-        return GENERAL_PARSE_STRATEGY.parse(this, tokens, head, context);
+        Node result = GENERAL_PARSE_STRATEGY.parse(this, tokens, head, context);
+        if (result != null) {
+            
+        }
+        return result;
     }
 
     public GrammarNode(MetaToken metaToken, List<GrammarNode> initialChildren) {
@@ -103,22 +107,25 @@ public class GrammarNode{
             InfixMetaToken infix = (metaToken instanceof InfixMetaToken imt) ? imt : null;
             InfixMetaToken childInfix = (child.metaToken instanceof InfixMetaToken imt) ? imt : null;
 
-            if ((infix == null) || (childInfix == null)) {
+            if ((infix == null) || (childInfix == null) || (childInfix.type != infix.type)) {
                 newChildren.add(child);
                 continue;
             }
 
-            if (infix.type == childInfix.type) {
-                for (GrammarNode descendant : child.getChildren()) {
-                    newChildren.add(descendant);
-                }
+            for (GrammarNode descendant : child.getChildren()) {
+                newChildren.add(descendant);
             }
+
 
         }
         children.clear();
         children.addAll(newChildren);
     }
     
+    public void dumpHints(Node to) {
+        if (!(metaToken instanceof OperandMetaToken operand)) return;
+        to.hints.addAll(operand.hints);
+    }
 }
 
 
@@ -136,50 +143,50 @@ class GenericParseStreategy implements ParseStrategy {
         put("?", new OptionalStrategy());
     }};
 
+    int indent = 0;
     @Override
     public Node parse(GrammarNode gn, Token[] tokens, int head, Map<String, GrammarNode> context) {
-        Token leading = tokens[head];
-        System.out.println(leading.toString() + " - " + gn.metaToken);
         switch (gn.metaToken) {
             case LiteralMetaToken literal -> {
                 // Leaf case
+                Token leading = tokens[head];
                 if (gn.represents(leading)) {
-                    System.out.println(1);
                     gn.tokensConsumed.put(leading, 1);
+                    gn.dumpHints(leading);
                     return leading;
                 }
                 
                 // Recursion case
                 else if (context.keySet().contains(literal.lexeme)) {
+                    for (int i = 0; i < indent; i++) System.out.print("----");
+                    System.out.println("START: " + literal.lexeme);
                     GrammarNode template = context.get(literal.lexeme);
+                    indent++;
                     Node response = template.parse(tokens, head, context);
-                    if (response == null) {
-                        System.out.println(2);
-                        return null;
-                    }
+                    indent --;
+                    for (int i = 0; i < indent; i++) System.out.print("----");
+                    System.out.println("END: " + literal.lexeme + " (" + (response != null) + ")");
+                    if (response == null) return null;
                     
                     response.category = literal.lexeme;
                     
                     gn.tokensConsumed.put(response, template.tokensConsumed.get(response));
+                    gn.dumpHints(response);
                     return response;
                 }
                 
-                else {
-                    System.out.println(3);
-                    return null;
-                }
+                else return null;
+                
             }
 
             // Operation case
             case OperatorMetaToken operator -> {
                 assert OPERATIONS.keySet().contains(operator.lexeme);
-                System.out.println(4);
                 return OPERATIONS.get(operator.lexeme).parse(gn, tokens, head, context);
             }
 
             // Bad case
             default -> {
-                System.out.println(5);
                 return (Node) null;
             }
         }
@@ -203,6 +210,7 @@ class ConcatParseStrategy implements ParseStrategy {
         }
 
         Node result = new Node(nodeChildren);
+        result.category = "<Concat>";
         gn.tokensConsumed.put(result, head - start);
 
         return result;
@@ -222,6 +230,7 @@ class OrParseStrategy implements ParseStrategy {
             wrap.add(response);
             Node wrapper = new Node(wrap);
             gn.tokensConsumed.put(wrapper, template.tokensConsumed.get(response));
+            wrapper.category = "<Any>";
             return wrapper;
 
         }
@@ -254,6 +263,7 @@ class PlusStrategy implements ParseStrategy {
         }
 
         Node result = new Node(nodeChildren);
+        result.category = (onePlus) ? "<OnePlus>" : "<ZeroPlus>"; 
         gn.tokensConsumed.put(result, head - start);
         return result;
     }
@@ -275,6 +285,7 @@ class OptionalStrategy implements ParseStrategy {
 
         Node result = new Node(nodeChildren);
         gn.tokensConsumed.put(result, tokensConsumed);
+        result.category = "<Optional>";
         return result;
     }
 }

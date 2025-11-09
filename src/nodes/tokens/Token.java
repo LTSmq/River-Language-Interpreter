@@ -4,7 +4,7 @@ import java.util.regex.Matcher;
 import nodes.Node;
 
 abstract public class Token extends Node {
-    String lexeme = "\0";
+    public String lexeme = "\0";
 
     public Token(Matcher match) {
         if (match == null) return;
@@ -21,6 +21,8 @@ abstract public class Token extends Node {
     }
     @Override
     public String toString() {
-        return this.getClass().getSimpleName() + "(\"" + lexeme + "\")";
+        String hintString = "";
+        if (!hints.isEmpty())  hintString += "::" + String.join(":", hints);
+        return this.getClass().getSimpleName() + "(\"" + lexeme + "\")" + hintString;
     }
 }

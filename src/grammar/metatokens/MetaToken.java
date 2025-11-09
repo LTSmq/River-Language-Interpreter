@@ -1,6 +1,7 @@
 package grammar.metatokens;
 
 import java.util.List;
+import java.util.HashSet;
 
 public abstract class MetaToken {
     public final String lexeme;

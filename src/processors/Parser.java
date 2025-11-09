@@ -1,19 +1,13 @@
 package processors;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Set;
 
 import grammar.Rule;
-import grammar.metatokens.*;
 
-import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
 import nodes.*;
-import nodes.instructions.Instruction;
 import nodes.tokens.*;
 
 import grammar.GrammarNode;
@@ -26,7 +20,6 @@ public class Parser {
 
     public Parser(String configSource) {
         Set<Rule> rules = MetaScanner.getRulesPostfix(configSource);
-
         for (Rule rule : rules) ruleNodes.put(rule.name, GrammarNode.generateGrammarTree(rule));
     }
 

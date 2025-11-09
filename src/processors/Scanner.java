@@ -35,8 +35,8 @@ public class Scanner {
             add(Word.class);
             add(KWord.If.class);
             add(KWord.While.class);
-            add(Operator.Comparator.class);
-            add(Operator.Arithmetic.class);
+            add(Comparator.class);
+            add(Arithmetic.class);
             add(Assign.class);
             add(Bracket.class);
             add(Delimiter.class);
